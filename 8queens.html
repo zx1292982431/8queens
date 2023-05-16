@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8">
+<head>
+    <title>八皇后-爬山法</title>
+    <style>
+        canvas {
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<select name="algorithm" id="algorithm" onchange="algorithmChange()">
+    <option value="normal">朴素爬山法</option>
+    <option value="random-restart">随机重启爬山法</option>
+</select>
+<div id="ans"></div>
+<div id="now"></div>
+<br>
+<canvas id="chessboard" width="400" height="400"></canvas>
+<br>
+ <button id="prevBtn" onclick="drawPrevStep()">上一步</button>
+<button id="nextBtn" onclick="drawNextStep()">下一步</button>
+
+<script>
+    // 绘制棋盘
+    function drawChessboard(context, size) {
+        context.clearRect(0, 0, size, size);
+
+        var squareSize = size / 8;
+
+        // 绘制格子
+        for (var i = 0; i < 8; i++) {
+            for (var j = 0; j < 8; j++) {
+                if ((i + j) % 2 === 0) {
+                    context.fillStyle = '#FFFFFF';  // 白色
+                } else {
+                    context.fillStyle = '#CCCCCC';  // 灰色
+                }
+                context.fillRect(i * squareSize, j * squareSize, squareSize, squareSize);
+            }
+        }
+    }
+
+    // 绘制皇后
+    function drawQueen(context, size, queens) {
+        var squareSize = size / 8;
+
+        // 皇后图标
+        var queenIcon = '♛';
+
+        // 字体样式
+        context.font = squareSize * 0.8 + 'px Arial';
+        context.textBaseline = 'middle';
+        context.textAlign = 'center';
+
+        // 绘制皇后位置
+        for (var i = 0; i < queens.length; i++) {
+            var row = i;
+            var col = queens[i];
+
+            var x = (col + 0.5) * squareSize;
+            var y = (row + 0.5) * squareSize;
+
+            context.fillStyle = '#e98d33';
+            context.fillText(queenIcon, x, y);
+        }
+    }
+
+    // 可视化八皇后问题解答过程
+    function visualizeSolutionProcess(solutionProcess) {
+        var canvas = document.getElementById('chessboard');
+        var context = canvas.getContext('2d');
+
+        var size = Math.min(canvas.width, canvas.height);
+
+        var step = 0;
+        var prevBtn = document.getElementById('prevBtn');
+        var nextBtn = document.getElementById('nextBtn');
+
+      function drawStep() {
+        if (step >= solutionProcess.length) {
+          nextBtn.disabled = true;
+          return;
+        }
+
+        if (step <= 0) {
+          prevBtn.disabled = true;
+        } else {
+          prevBtn.disabled = false;
+        }
+
+        var queens = solutionProcess[step];
+        var value = evaluate(queens);
+        var neighbors = neighborSets[step];
+
+        let now = document.getElementById("now");
+        now.innerText = "当前冲突对数: "+String(value);
+
+        drawChessboard(context, size);
+        drawQueen(context, size, queens);
+        visualizeNeighbors(context,size,neighbors);
+      }
+
+      // 绘制第一步
+      drawStep();
+
+      // 绘制下一步
+      function drawNextStep() {
+        if (step < solutionProcess.length - 1) {
+          step++;
+          drawStep();
+        }
+      }
+
+      // 绘制上一步
+      function drawPrevStep() {
+        if (step > 0) {
+          step--;
+          drawStep();
+        }
+      }
+
+
+        // 将绘制下一步函数暴露给全局作用域，以便按钮点击事件调用
+        window.drawNextStep = drawNextStep;
+        window.drawPrevStep = drawPrevStep;
+    }
+
+    // 评估函数：计算皇后互相攻击的对数
+    function evaluate(queens) {
+        var n = queens.length;
+        var attacks = 0;
+        for (var i = 0; i < n; i++) {
+            for (var j = i + 1; j < n; j++) {
+                if (queens[i] === queens[j] || Math.abs(queens[i] - queens[j]) === j - i) {
+                    attacks++;
+                }
+            }
+        }
+        return attacks;
+    }
+
+    // 生成随机初始状态
+    function generateInitialState(n) {
+        var queens = [];
+        for (var i = 0; i < n; i++) {
+            queens.push(i);
+        }
+        queens = shuffleArray(queens);
+        return queens;
+    }
+
+    // Fisher-Yates 洗牌算法
+    function shuffleArray(array) {
+        var currentIndex = array.length;
+        var temporaryValue, randomIndex;
+
+        while (currentIndex !== 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex -= 1;
+
+            temporaryValue = array[currentIndex];
+            array[currentIndex] = array[randomIndex];
+            array[randomIndex] = temporaryValue;
+        }
+
+        return array;
+    }
+
+    // 生成邻域状态
+    function generateNeighborState(state) {
+        var neighbors = [];
+        var n = state.length;
+        for (var i = 0; i < n; i++) {
+            for (var j = 0; j < n; j++) {
+                if (j !== state[i]) {
+                    var neighbor = state.slice();
+                    neighbor[i] = j;
+                    neighbors.push(neighbor);
+                }
+            }
+        }
+        return neighbors;
+    }
+
+    //可视化邻域状态
+    function visualizeNeighbors(context, size, neighbors) {
+        var squareSize = size / 8;
+        context.font = squareSize * 0.8 + 'px Arial';
+        context.textBaseline = 'middle';
+        context.textAlign = 'center';
+        context.fillStyle = '#80a89c';  // 黑色
+        for (var i = 0; i < neighbors.length; i++) {
+            //console.log("neighbor:",neighbors[i])
+            var value = evaluate(neighbors[i]);
+            //console.log("value:",value);
+            var row = parseInt(i / 7);
+            var col = neighbors[i][row];
+            var x = (col + 0.5) * squareSize;
+            var y = (row + 0.5) * squareSize;
+            //console.log("(row,col):",row,col);
+            //console.log("(x,y):",x,y);
+            context.fillText(String(value), x, y);
+        }
+    }
+
+    var solutionProcess = [];
+    var neighborSets = [];
+
+    // 爬山法求解八皇后问题
+    function hillClimbing(n) {
+        var current_state = generateInitialState(n);
+        //var current_state = [7,2,6,3,1,4,0,5];
+        solutionProcess.push(current_state);
+        var current_eval = evaluate(current_state);
+
+        while (true) {
+            var neighbors = generateNeighborState(current_state);
+            var set = []
+            //console.log("neighbors:",neighbors);
+            var best_neighbor = null;
+            var best_eval = current_eval;
+
+            for (var i = 0; i < neighbors.length; i++) {
+                var neighbor = neighbors[i];
+                set.push(neighbor)
+                var neighbor_eval = evaluate(neighbor);
+                if (neighbor_eval < best_eval) {
+                    best_neighbor = neighbor;
+                    best_eval = neighbor_eval;
+                }
+            }
+            neighborSets.push(set)
+
+            if (best_eval >= current_eval) {
+                // 无更好的邻域状态，当前状态为局部最优解
+                break;
+            }
+
+            current_state = best_neighbor;
+            solutionProcess.push(current_state);
+            current_eval = best_eval;
+        }
+
+        return evaluate(current_state);
+    }
+
+    function randomRestartHillClimbing(n, maxIterations) {
+        var iteration = 0;
+
+        while (iteration < maxIterations) {
+            var current_state = generateInitialState(n);
+            solutionProcess.push(current_state);
+            var current_eval = evaluate(current_state);
+
+            while (true) {
+                var neighbors = generateNeighborState(current_state);
+                var best_neighbor = null;
+                var best_eval = current_eval;
+                var set = [];
+
+                for (var i = 0; i < neighbors.length; i++) {
+                    var neighbor = neighbors[i];
+                    set.push(neighbor);
+                    var neighbor_eval = evaluate(neighbor);
+                    if (neighbor_eval < best_eval) {
+                        best_neighbor = neighbor;
+                        best_eval = neighbor_eval;
+                    }
+                }
+                neighborSets.push(set);
+
+                if (best_eval === 0) {
+                    // 找到解决方案，返回结果
+                    solutionProcess.push(best_neighbor);
+                    set = []
+                    neighbors = generateNeighborState(best_neighbor)
+                    for(var i=0; i<neighbors.length;i++){
+                        set.push(neighbors[i]);
+                    }
+                    neighborSets.push(set);
+                    return best_neighbor;
+                }
+
+                if (best_eval >= current_eval) {
+                    // 无更好的邻域状态，当前状态为局部最优解，跳出内部循环
+                    break;
+                }
+
+                current_state = best_neighbor;
+                solutionProcess.push(current_state);
+                current_eval = best_eval;
+            }
+
+            iteration++;
+        }
+
+        // 达到最大迭代次数仍未找到解决方案
+        return null;
+    }
+
+    function algorithmChange()
+    {
+        let ans = document.getElementById("ans");
+        solutionProcess = [];
+        neighborSets = [];
+        let alSel = document.getElementById("algorithm");
+        var index = alSel.selectedIndex;
+        if (index === 0) {
+            console.log("朴素爬山法");
+            var solution = hillClimbing(8);
+            if (solution === 0) {
+                ans.innerText = ("找到全局最优解！");
+            } else {
+                ans.innerText = ("找到局部最优解！最终冲突数："+String(solution));
+            }
+            console.log(solutionProcess);
+            visualizeSolutionProcess(solutionProcess);
+        }
+        else{
+            console.log("随机重启爬山法");
+            maxIterations = 100;
+            var solution = randomRestartHillClimbing(8,maxIterations);
+            if (solution!=null)
+            {
+                ans.innerText = ("找到全局最优解!");
+                console.log("solution:",solution);
+                console.log("solitionProcess:",solutionProcess);
+                console.log("neighborSets:",neighborSets);
+                visualizeSolutionProcess(solutionProcess);
+            }
+            else{
+                ans.innerText = ("在100次迭代内未找到最优解");
+            }
+        }
+    }
+
+    algorithmChange();
+
+</script>
+</body>
+</html>
