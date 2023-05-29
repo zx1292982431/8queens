@@ -7,6 +7,6 @@
 
 ---------
 
-![Screenshot 2023-05-29 at 14.00.53](/Users/lizixuan/Library/Application Support/typora-user-images/Screenshot 2023-05-29 at 14.00.53.png)
+![Screenshot 2023-05-29 at 14.00.53](./img.png)
 
-* [演示地址](104.208.70.60/8queens.html)
+* [演示地址](https://104.208.70.60/8queens.html)
